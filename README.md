@@ -13,6 +13,9 @@ npm init solid@latest my-app
 ```
 
 ## Developing
+PostgreSQL Docker Instance
+```bash
+docker run --name solidstart-boilerplate -e POSTGRES_USER=example -e POSTGRES_PASSWORD=password -e POSTGRES_DB=boilerplate -p 5432:5432 -d postgres
 
 Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
 
