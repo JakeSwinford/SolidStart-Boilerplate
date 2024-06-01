@@ -1,44 +1,118 @@
-import { action, cache, redirect } from "@solidjs/router";
-import { db } from "../db";
-import { getSession, login, logout as logoutSession, register, validatePassword, validateUsername } from "./server";
+import { cache } from "@solidjs/router";
+import { sendError, setCookie } from "vinxi/http";
+import { action, redirect } from "@solidjs/router";
+import { Argon2id } from "oslo/password";
+import { getRequestEvent } from "solid-js/web";
+import { lucia } from "~/lib/auth";
+import { db } from "~/lib/db";
+import { generateId } from "lucia";
+import type { DatabaseUser } from "~/lib/db";
+import { PostgresError } from "postgres";
 
-export const getUser = cache(async () => {
+export const getAuthenticatedUser = cache(async () => {
   "use server";
-  try {
-    const session = await getSession();
-    const userId = session.data.userId;
-    if (userId === undefined) throw new Error("User not found");
-    const user = await db.user.findUnique({ where: { id: userId } });
-    if (!user) throw new Error("User not found");
-    return { id: user.id, username: user.username };
-  } catch {
-    await logoutSession();
+  const event = getRequestEvent()!;
+  if (!event.locals.user) {
     throw redirect("/login");
   }
+  return event.locals.user;
 }, "user");
 
-export const loginOrRegister = action(async (formData: FormData) => {
+export const login = action(async (formData: FormData) => {
   "use server";
-  const username = String(formData.get("username"));
-  const password = String(formData.get("password"));
-  const loginType = String(formData.get("loginType"));
-  let error = validateUsername(username) || validatePassword(password);
-  if (error) return new Error(error);
+  const username = formData.get("username");
+  if (
+    typeof username !== "string" ||
+    username.length < 3 ||
+    username.length > 31 ||
+    !/^[a-z0-9_-]+$/.test(username)
+  ) {
+    return new Error("Invalid username");
+  }
+  const password = formData.get("password");
+  if (
+    typeof password !== "string" ||
+    password.length < 6 ||
+    password.length > 255
+  ) {
+    return new Error("Invalid password");
+  }
+  
+  const existingUser = await db<DatabaseUser[]>`
+		SELECT * FROM users WHERE username = ${username}
+	`;
+  if (!existingUser.length) {
+    return new Error("Incorrect username or password");
+  }
+
+  const validPassword = await new Argon2id().verify(
+    existingUser[0].password,
+    password
+  );
+  if (!validPassword) {
+    return new Error("Incorrect username or password");
+  }
+
+  const session = await lucia.createSession(existingUser[0].id, {});
+  const cookie = lucia.createSessionCookie(session.id);
+  
+  setCookie(cookie.name, cookie.value, cookie.attributes);
+  throw redirect("/");
+});
+
+export const signup = action(async (formData: FormData) => {
+  "use server";
+  const username = formData.get("username");
+  if (
+    typeof username !== "string" ||
+    username.length < 3 ||
+    username.length > 31 ||
+    !/^[a-z0-9_-]+$/.test(username)
+  ) {
+    return new Error("Invalid username");
+  }
+  const password = formData.get("password");
+  if (
+    typeof password !== "string" ||
+    password.length < 6 ||
+    password.length > 255
+  ) {
+    return new Error("Invalid password");
+  }
+  const hashedPassword = await new Argon2id().hash(password);
+  const userId = generateId(15);
 
   try {
-    const user = await (loginType !== "login"
-      ? register(username, password)
-      : login(username, password));
-    const session = await getSession();
-    await session.update(d => (d.userId = user!.id));
-  } catch (err) {
-    return err as Error;
+    await db`
+			INSERT INTO users (id, username, password)
+			VALUES (${userId}, ${username}, ${hashedPassword})
+		`;
+
+    const session = await lucia.createSession(userId, {});
+    console.log(session) 
+    const cookie = lucia.createSessionCookie(session.id);
+    setCookie(cookie.name, cookie.value, cookie.attributes);
+  } catch (e) {
+    if (e instanceof PostgresError && e.code === "23505") {
+      // PostgreSQL unique violation error code
+      return new Error("Username already used");
+    }
+    return new Error("An unknown error occurred");
   }
-  return redirect("/");
+  throw redirect("/");
 });
 
 export const logout = action(async () => {
   "use server";
-  await logoutSession();
-  return redirect("/login");
+  const event = getRequestEvent()!;
+  if (!event.locals.session) {
+    return new Error("Unauthorized");
+  }
+  await lucia.invalidateSession(event.locals.session.id);
+
+  const cookie = lucia.createBlankSessionCookie();
+
+  setCookie(cookie.name, cookie.value, cookie.attributes);
+
+  throw redirect("/login");
 });

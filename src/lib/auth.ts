@@ -1,6 +1,7 @@
 import { Lucia } from "lucia";
 import { PostgresJsAdapter } from "@lucia-auth/adapter-postgresql";
-import db from "~/db";
+import { DatabaseUser, db } from "./db";
+import { isDev } from "solid-js/web";
 
 const adapter = new PostgresJsAdapter(db, {
   user: "auth_user",
@@ -11,7 +12,7 @@ export const lucia = new Lucia(adapter, {
   sessionCookie: {
     attributes: {
       // set to `true` when using HTTPS
-      secure: import.meta.env.PROD,
+      secure: !isDev
     },
   },
   getUserAttributes: (attributes) => {
@@ -26,9 +27,6 @@ export const lucia = new Lucia(adapter, {
 declare module "lucia" {
   interface Register {
     Lucia: typeof lucia;
-    DatabaseUserAttributes: DatabaseUserAttributes;
-  }
+		DatabaseUserAttributes: Omit<DatabaseUser, "id">;  }
 }
-interface DatabaseUserAttributes {
-	username: string;
-}
+
