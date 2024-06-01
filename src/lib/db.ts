@@ -13,7 +13,7 @@ export const db = postgres(); // will use psql environment variables
   await db`
   CREATE TABLE IF NOT EXISTS session (
     id TEXT NOT NULL PRIMARY KEY,
-    expires_at INTEGER NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     user_id TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id)
   )

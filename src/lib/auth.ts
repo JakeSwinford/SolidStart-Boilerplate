@@ -4,8 +4,8 @@ import { DatabaseUser, db } from "./db";
 import { isDev } from "solid-js/web";
 
 const adapter = new PostgresJsAdapter(db, {
-  user: "auth_user",
-  session: "user_session",
+  user: "users",
+  session: "session",
 });
 
 export const lucia = new Lucia(adapter, {
