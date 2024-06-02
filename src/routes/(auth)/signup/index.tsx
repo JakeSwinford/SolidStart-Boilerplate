@@ -30,32 +30,37 @@ export default function Signup() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-          <form method="post" action={signup}>
-            <div class="grid gap-4">
-
-              <div class="grid gap-2">
-                <TextFieldRoot>
-                  <TextFieldLabel>Email</TextFieldLabel>
-                  <TextField
-                    id="username"
-                    name="username"
-                    placeholder="m@example.com"
-                    required
-                  />
-                </TextFieldRoot>
+            <form method="post" action={signup}>
+              <div class="grid gap-4">
+                <div class="grid gap-2">
+                  <TextFieldRoot>
+                    <TextFieldLabel>Email</TextFieldLabel>
+                    <TextField
+                      id="username"
+                      name="username"
+                      placeholder="m@example.com"
+                      required
+                    />
+                  </TextFieldRoot>
+                </div>
+                <div class="grid gap-2">
+                  <TextFieldRoot>
+                    <TextFieldLabel>Password</TextFieldLabel>
+                    <TextField id="password" name="password" type="password" />
+                  </TextFieldRoot>
+                </div>
+                <Button type="submit" class="w-full">
+                  Create an account
+                </Button>
+                <Button variant="outline" class="w-full">
+                  Sign up with Google
+                </Button>
               </div>
-              <div class="grid gap-2">
-                <TextFieldRoot>
-                  <TextFieldLabel>Password</TextFieldLabel>
-                  <TextField id="password" name="password" type="password" />
-                </TextFieldRoot>
-              </div>
-              <Button type="submit" class="w-full">
-                Create an account
-              </Button>
-            </div>
-            <Show when={submission.result}>{(result) => <p>{result().message}</p>}</Show>
+              <Show when={submission.result}>
+                {(result) => <p>{result().message}</p>}
+              </Show>
             </form>
+
             <div class="mt-4 text-center text-sm">
               Already have an account?{" "}
               <a href="/login" class="underline">
