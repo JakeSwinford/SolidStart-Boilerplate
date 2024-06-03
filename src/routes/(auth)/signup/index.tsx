@@ -53,7 +53,7 @@ export default function Signup() {
                   Create an account
                 </Button>
                 <Button variant="outline" class="w-full">
-                  Sign up with Google
+                  Signup with Google
                 </Button>
               </div>
               <Show when={submission.result}>
