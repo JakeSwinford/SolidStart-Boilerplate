@@ -38,6 +38,7 @@ export default function Signup() {
                     <TextField
                       id="username"
                       name="username"
+                      type="email"
                       placeholder="m@example.com"
                       required
                     />

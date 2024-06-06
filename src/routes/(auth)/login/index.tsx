@@ -36,6 +36,7 @@ export default function Login() {
                   <TextField
                     id="username"
                     name="username"
+                    type="email"
                     placeholder="m@example.com"
                     required
                   />
@@ -50,12 +51,20 @@ export default function Login() {
                       Forgot your password?
                     </a>
                   </div>
-                  <TextField name="password" id="password" type="password" required />
+                  <TextField
+                    name="password"
+                    id="password"
+                    type="password"
+                    required
+                  />
                 </TextFieldRoot>
               </div>
 
               <Button type="submit" class="w-full">
                 Login
+              </Button>
+              <Button variant="outline" class="w-full">
+                Login with Google
               </Button>
             </div>
             <Show when={submission.result}>
